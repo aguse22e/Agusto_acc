@@ -2,7 +2,7 @@
 
 Aplikasi akuntansi berbasis web (versi arsip/legacy) — pencatatan transaksi kas, bank, dan memorial yang bermuara ke jurnal umum, buku besar, neraca saldo, dan laporan laba rugi.
 
-> Ini adalah versi bersih untuk upload ulang dari arsip lama (Juni 2025). Versi pengembangan yang lebih baru ada di repo `accounting_`.
+> Ini adalah versi terbaru untuk upload ulang dari arsip lama (Juni 2025). Versi pengembangan yang lebih baru ada di repo `accounting_`.
 
 ## Teknologi
 
@@ -36,7 +36,7 @@ php artisan serve
 Akun awal dibuat oleh `database/seeders/UserSeeder.php` (Administrator).
 **Wajib ganti password default seeder segera setelah login pertama.**
 
-## Perbaikan logika akuntansi pada versi bersih ini
+## Perbaikan logika akuntansi pada versi terbaru ini
 
 1. **Referensi saldo normal akun** — semua laporan (Buku Besar, Neraca Saldo, Laba Rugi, termasuk export) sekarang membaca kolom `tipe` dari akun itu sendiri (tabel `kode_akun`), bukan dari `kode_induk` yang sudah tidak memiliki kolom tersebut. Sebelumnya nilai itu selalu kosong sehingga semua akun diperlakukan sebagai saldo normal Kredit dan saldo akun Debit (Kas, aset, beban) terbalik.
 2. **Rumus saldo awal Buku Besar untuk akun saldo normal Kredit** — sekarang `total sisi Kredit − total sisi Debit`. Sebelumnya kedua sisi dijumlahkan, sehingga saldo awal hutang/modal/pendapatan selalu terlalu besar.
