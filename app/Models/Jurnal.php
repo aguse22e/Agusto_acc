@@ -12,5 +12,4 @@ class Jurnal extends Model
     // agar transaksi yang dipindah ke sampah tidak terhitung di laporan.
     use HasFactory, SoftDeletes;
     protected $table = 'jurnal';
-    protected $dates = ['deleted_at'];
 }

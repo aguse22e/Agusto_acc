@@ -12,7 +12,6 @@ class Memorial extends Model
     protected $table = 'memorial';
     protected $primaryKey = 'kode_memorial';
     public $incrementing = FALSE;
-    protected $dates = ['deleted_at'];
 
     public function kodeRekening()
     {

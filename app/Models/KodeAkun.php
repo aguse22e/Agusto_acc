@@ -11,7 +11,6 @@ class KodeAkun extends Model
     use HasFactory, SoftDeletes;
     protected $table = 'kode_akun';
     protected $primaryKey = 'kode_akun';
-    protected $dates = ['deleted_at'];
 
     public function kodeInduk()
     {

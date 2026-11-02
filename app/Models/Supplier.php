@@ -10,5 +10,4 @@ class Supplier extends Model
 {
     use HasFactory, SoftDeletes;
     protected $table = 'supplier';
-    protected $dates = ['deleted_at'];
 }

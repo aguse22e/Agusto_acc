@@ -10,6 +10,5 @@ class Customer extends Model
 {
     use HasFactory, SoftDeletes;
     protected $table = 'customer';
-    protected $dates = ['deleted_at'];
 
 }

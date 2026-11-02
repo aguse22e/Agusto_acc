@@ -10,7 +10,6 @@ class Shift extends Model
 {
     use HasFactory, SoftDeletes;
     protected $table = 'shift';
-    protected $dates = ['deleted_at'];
 
     public function jadwalKerja()
     {

@@ -10,7 +10,10 @@ class Karyawan extends Model
 {
     use HasFactory, SoftDeletes;
     protected $table = 'karyawan';
-    protected $dates = ['deleted_at', 'tanggal_lahir', 'tanggal_masuk'];
+    protected $casts = [
+        'tanggal_lahir' => 'date',
+        'tanggal_masuk' => 'date',
+    ];
 
     public function jadwalKerja()
     {

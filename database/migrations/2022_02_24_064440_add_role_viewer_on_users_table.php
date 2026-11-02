@@ -14,8 +14,12 @@ class AddRoleViewerOnUsersTable extends Migration
      */
     public function up()
     {
-        DB::statement("ALTER TABLE users MODIFY COLUMN level ENUM('Administrator', 'Accounting', 'Viewer')");
-
+        // MODIFY COLUMN ... ENUM adalah sintaks khusus MySQL/MariaDB.
+        // Pada driver lain (mis. SQLite untuk pengujian) kolom level sudah
+        // dibuat oleh migration awal, jadi langkah ini dilewati.
+        if (DB::connection()->getDriverName() === 'mysql') {
+            DB::statement("ALTER TABLE users MODIFY COLUMN level ENUM('Administrator', 'Accounting', 'Viewer')");
+        }
     }
 
     /**

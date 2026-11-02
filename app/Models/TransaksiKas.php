@@ -12,7 +12,6 @@ class TransaksiKas extends Model
     protected $table = 'transaksi_kas';
     protected $primaryKey = 'kode_transaksi_kas';
     public $incrementing = FALSE;
-    protected $dates = ['deleted_at'];
 
     public function kodeAkun()
     {
