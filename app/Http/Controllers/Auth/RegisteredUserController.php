@@ -39,10 +39,22 @@ class RegisteredUserController extends Controller
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
         ]);
 
+        // Kolom username & level bersifat NOT NULL di tabel users: username
+        // diturunkan dari alamat email, level default Viewer (pengelolaan
+        // user penuh tetap lewat modul Users oleh Administrator).
+        $username = strstr($request->email, '@', true);
+        $dasar = $username;
+        $i = 1;
+        while (User::where('username', $username)->exists()) {
+            $username = $dasar . $i++;
+        }
+
         $user = User::create([
             'name' => $request->name,
+            'username' => $username,
             'email' => $request->email,
             'password' => Hash::make($request->password),
+            'level' => 'Viewer',
         ]);
 
         event(new Registered($user));
