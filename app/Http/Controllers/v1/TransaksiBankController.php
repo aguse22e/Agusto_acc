@@ -13,6 +13,8 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Traits\SequenceTrait;
+use App\Http\Traits\PeriodeGuard;
+use App\Http\Traits\JurnalKoreksi;
 use App\Models\TransaksiKasDetail;
 use App\Models\UserActivity;
 use Illuminate\Support\Facades\Auth;
@@ -21,7 +23,7 @@ class TransaksiBankController extends Controller
 {
     private $param;
 
-    use SequenceTrait;
+    use SequenceTrait, PeriodeGuard, JurnalKoreksi;
 
     public function __construct()
     {
@@ -65,12 +67,10 @@ class TransaksiBankController extends Controller
         $this->param['btnLink'] = route('bank-transaksi.index');
         $this->param['kodeAkun'] = KodeAkun::select('kode_akun.kode_akun','kode_akun.nama')
                                             // ->join('kode_induk','kode_akun.induk_kode','kode_induk.kode_induk')
-                                            ->where('kode_akun.nama','LIKE','Bank%')
+                                            ->where('kode_akun.jenis_akun','Bank')
                                             ->get();
         $this->param['kode_lawan'] = KodeAkun::select('kode_akun.kode_akun','kode_akun.nama')
                                             // ->join('kode_induk','kode_akun.induk_kode','kode_induk.kode_induk')
-                                            ->where('kode_akun.nama','!=','Kas')
-                                            ->where('kode_akun.nama', '!=', 'Bank')
                                             ->get();
         return view('pages.transaksi-bank.create',$this->param);
     }
@@ -84,11 +84,11 @@ class TransaksiBankController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'tanggal' => 'required',
+            'tanggal' => 'required|date',
             'tipe' => 'required|not_in:0',
             'kode_akun' => 'required|not_in:0',
             'kode_lawan.*' => 'required|not_in:0',
-            'subtotal.*' => 'required',
+            'subtotal.*' => 'required|numeric|gt:0',
             'keterangan.*' => 'required',
         ],[
             'required' => ':attribute harus terisi.',
@@ -101,6 +101,20 @@ class TransaksiBankController extends Controller
 
         ]);
         // return $request;
+        // PERBAIKAN SAK: kunci periode ditegakkan dan akun posting diperiksa di server
+        if ($this->tanggalTerkunci('Bank Memorial', $request->tanggal)) {
+            return redirect()->back()->withInput()->withError($this->pesanTerkunci('Bank Memorial', $request->tanggal));
+        }
+        $cekAkun = $this->periksaAkunPosting($request->kode_akun, 'Bank');
+        if ($cekAkun) {
+            return redirect()->back()->withInput()->withError($cekAkun);
+        }
+        foreach ((array) $request->kode_lawan as $kodeLawan) {
+            $cekAkun = $this->periksaAkunPosting($kodeLawan);
+            if ($cekAkun) {
+                return redirect()->back()->withInput()->withError($cekAkun);
+            }
+        }
         DB::beginTransaction();
         try {
             $total = 0;
@@ -119,6 +133,7 @@ class TransaksiBankController extends Controller
             $addTransaksi->tanggal = $request->tanggal;
             $addTransaksi->akun_kode = $request->kode_akun;
             $addTransaksi->tipe = $request->tipe;
+            $addTransaksi->no_referensi = $request->no_referensi;
             $addTransaksi->total = $total;
 
 
@@ -180,12 +195,10 @@ class TransaksiBankController extends Controller
             $this->param['btnLink'] = route('bank-transaksi.index');
             $this->param['kodeAkun'] = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
                                                 ->join('kode_induk', 'kode_akun.induk_kode', 'kode_induk.kode_induk')
-                                                ->where('kode_akun.nama', 'LIKE', 'Bank%')
+                                                ->where('kode_akun.jenis_akun', 'Bank')
                                                 ->get();
             $this->param['kode_lawan'] = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
                                                 ->join('kode_induk', 'kode_akun.induk_kode', 'kode_induk.kode_induk')
-                                                ->where('kode_akun.nama', '!=', 'Kas')
-                                                ->where('kode_akun.nama', '!=', 'Bank')
                                                 ->get();
             $this->param['transaksi_bank'] = TransaksiBank::find($id);
             $this->param['transaksi_bank_detail'] = TransaksiBankDetail::where('kode_transaksi_bank',$id)->get();
@@ -212,12 +225,10 @@ class TransaksiBankController extends Controller
             $this->param['btnLink'] = route('bank-transaksi.index');
             $this->param['kodeAkun'] = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
                                                 ->join('kode_induk', 'kode_akun.induk_kode', 'kode_induk.kode_induk')
-                                                ->where('kode_akun.nama', 'LIKE', 'Bank%')
+                                                ->where('kode_akun.jenis_akun', 'Bank')
                                                 ->get();
             $this->param['kode_lawan'] = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
                                                 ->join('kode_induk', 'kode_akun.induk_kode', 'kode_induk.kode_induk')
-                                                ->where('kode_akun.nama', '!=', 'Kas')
-                                                ->where('kode_akun.nama', '!=', 'Bank')
                                                 ->get();
             $this->param['transaksi_bank'] = TransaksiBank::find($id);
             $this->param['transaksi_bank_detail'] = TransaksiBankDetail::where('kode_transaksi_bank',$id)->get();
@@ -245,7 +256,7 @@ class TransaksiBankController extends Controller
             'tipe' => 'required|not_in:0',
             'kode_akun' => 'required|not_in:0',
             'kode_lawan.*' => 'required|not_in:0',
-            'subtotal.*' => 'required|numeric',
+            'subtotal.*' => 'required|numeric|gt:0',
             'keterangan.*' => 'required',
         ],[
             'required' => ':attribute harus terisi.',
@@ -267,6 +278,26 @@ class TransaksiBankController extends Controller
 
             if ($bulan_transaksi_bank != $edit_bulan_transasik_bank) {
                 return redirect()->back()->withStatus('tidak dapat memperbarui bulan transaksi');
+            }
+            // PERBAIKAN SAK: transaksi terkunci atau di luar periode berjalan tidak dapat diubah langsung
+            if ($this->tanggalTerkunci('Bank Memorial', $transaksi_bank->tanggal)) {
+                return redirect()->back()->withError($this->pesanTerkunci('Bank Memorial', $transaksi_bank->tanggal));
+            }
+            if (!$this->diPeriodeBerjalan($transaksi_bank->tanggal)) {
+                return redirect()->back()->withError($this->pesanBukanPeriodeBerjalan($transaksi_bank->tanggal));
+            }
+            if ($this->tanggalTerkunci('Bank Memorial', $request->tanggal)) {
+                return redirect()->back()->withError($this->pesanTerkunci('Bank Memorial', $request->tanggal));
+            }
+            $cekAkun = $this->periksaAkunPosting($request->kode_akun, 'Bank');
+            if ($cekAkun) {
+                return redirect()->back()->withError($cekAkun);
+            }
+            foreach ((array) $request->kode_lawan as $kodeLawan) {
+                $cekAkun = $this->periksaAkunPosting($kodeLawan);
+                if ($cekAkun) {
+                    return redirect()->back()->withError($cekAkun);
+                }
             }
             $tipe = $request->tipe; // PERBAIKAN SAK: tipe jurnal mengikuti tipe BARU dari form edit, bukan tipe lama di database
 
@@ -353,6 +384,7 @@ class TransaksiBankController extends Controller
                 'tanggal' => $_POST['tanggal'],
                 'akun_kode' => $_POST['kode_akun'],
                 'tipe' => $_POST['tipe'],
+                'no_referensi' => $_POST['no_referensi'] ?? null,
                 'total' => $newTotal,
             ]);
 
@@ -409,6 +441,10 @@ class TransaksiBankController extends Controller
     {
         try {
             $transaksiBank = TransaksiBank::withTrashed()->findOrFail($id);
+            // PERBAIKAN SAK: memulihkan transaksi ke periode terkunci sama dengan mengubah periode itu
+            if ($this->tanggalTerkunci('Bank Memorial', $transaksiBank->tanggal)) {
+                return redirect()->back()->withError($this->pesanTerkunci('Bank Memorial', $transaksiBank->tanggal));
+            }
             if ($transaksiBank->trashed()) {
                 $transaksiBank->deleted_by = null;
                 $transaksiBank->restore();
@@ -452,6 +488,13 @@ class TransaksiBankController extends Controller
     {
         try {
             $trashTransaksiBank = TransaksiBank::findOrFail($id);
+            // PERBAIKAN SAK: transaksi terkunci atau di luar periode berjalan tidak dapat dipindah ke sampah
+            if ($this->tanggalTerkunci('Bank Memorial', $trashTransaksiBank->tanggal)) {
+                return redirect()->back()->withError($this->pesanTerkunci('Bank Memorial', $trashTransaksiBank->tanggal));
+            }
+            if (!$this->diPeriodeBerjalan($trashTransaksiBank->tanggal)) {
+                return redirect()->back()->withError($this->pesanBukanPeriodeBerjalan($trashTransaksiBank->tanggal));
+            }
             // return $trashUser;
             if ($trashTransaksiBank->deleted_by = auth()->user()->id) {
                 $trashTransaksiBank->update();
@@ -474,8 +517,6 @@ class TransaksiBankController extends Controller
         $next = $_GET['biggestNo'] + 1;
         $kode_lawan = KodeAkun::select('kode_akun.kode_akun','kode_akun.nama')
                         ->join('kode_induk','kode_akun.induk_kode','kode_induk.kode_induk')
-                        ->where('kode_akun.nama','!=','Kas')
-                        ->where('kode_akun.nama', '!=', 'Bank')
                         ->get();
         return view('pages.transaksi-bank.form-detail-transaksi-bank', ['hapus' => true, 'no' => $next, 'kode_lawan' => $kode_lawan]);
     }
@@ -486,7 +527,7 @@ class TransaksiBankController extends Controller
         try {
             $this->param['kodeAkun'] = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
             // ->join('kode_induk', 'kode_akun.induk_kode', 'kode_induk.kode_induk')
-                                                ->where('kode_akun.nama', 'LIKE', 'Bank%')
+                                                ->where('kode_akun.jenis_akun', 'Bank')
                                                 ->get();
             $this->param['report_bank'] = null;
             return view('pages.transaksi-bank.laporan-bank',$this->param);
@@ -511,7 +552,7 @@ class TransaksiBankController extends Controller
         // return $request;
         try {
             $this->param['kodeAkun'] = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
-                                                ->where('kode_akun.nama', 'LIKE', 'Bank%')
+                                                ->where('kode_akun.jenis_akun', 'Bank')
                                                 ->get();
             $this->param['report_bank'] = TransaksiBank::select(
                                                     'transaksi_bank.kode_transaksi_bank',
@@ -550,7 +591,7 @@ class TransaksiBankController extends Controller
         // return $request;
         try {
             $this->param['kodeAkun'] = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
-                                                ->where('kode_akun.nama', 'LIKE', 'Kas%')
+                                                ->where('kode_akun.jenis_akun', 'Bank')
                                                 ->get();
             $this->param['report_kas'] = TransaksiBank::select(
                                                     'transaksi_bank.kode_transaksi_bank',
@@ -587,9 +628,18 @@ class TransaksiBankController extends Controller
 
         $kode_lawan = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
                                 ->join('kode_induk', 'kode_akun.induk_kode', 'kode_induk.kode_induk')
-                                ->where('kode_akun.nama', '!=', 'Kas')
-                                ->where('kode_akun.nama', '!=', 'Bank')
                                 ->get();
         return view('pages.transaksi-bank.form-edit-detail-transaksi-bank', ['hapus' => true, 'no' => $next, 'kode_lawan' => $kode_lawan, 'fields' => $fields, 'idDetail' => '0']);
+    }
+
+    // PERBAIKAN SAK: buat Jurnal Koreksi (memorial pembalik) atas transaksi ini
+    public function koreksi($id)
+    {
+        $transaksi = TransaksiBank::findOrFail($id);
+        list($berhasil, $pesan) = $this->buatJurnalKoreksi('Bank', $transaksi->kode_transaksi_bank);
+        if ($berhasil) {
+            return redirect()->route('memorial.index')->withStatus($pesan);
+        }
+        return redirect()->back()->withError($pesan);
     }
 }

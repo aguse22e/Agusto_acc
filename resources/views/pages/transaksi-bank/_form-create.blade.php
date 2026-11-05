@@ -38,6 +38,12 @@
             @enderror
         </div>
     </div>
+    <div class="form-group row">
+        <div class="col-sm-4">
+            <label class="col-form-label">No Referensi Bank (nomor cek / referensi transfer, boleh kosong)</label>
+            <input class="form-control form-control-lg" type="text" name="no_referensi" maxlength="50" value="{{ old('no_referensi') }}"/>
+        </div>
+    </div>
     <div class="card-header">
         <h5>Detail Transaksi Bank</h5>
     </div>

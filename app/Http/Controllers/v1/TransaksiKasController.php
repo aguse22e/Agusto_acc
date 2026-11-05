@@ -13,6 +13,8 @@ use Illuminate\Database\QueryException;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use App\Http\Traits\SequenceTrait;
+use App\Http\Traits\PeriodeGuard;
+use App\Http\Traits\JurnalKoreksi;
 use App\Models\UserActivity;
 use Illuminate\Support\Facades\Auth;
 
@@ -20,7 +22,7 @@ class TransaksiKasController extends Controller
 {
     private $param;
 
-    use SequenceTrait;
+    use SequenceTrait, PeriodeGuard, JurnalKoreksi;
 
     public function __construct()
     {
@@ -64,12 +66,10 @@ class TransaksiKasController extends Controller
         $this->param['btnLink'] = route('kas-transaksi.index');
         $this->param['kodeAkun'] = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
                                             ->join('kode_induk', 'kode_akun.induk_kode', 'kode_induk.kode_induk')
-                                            ->where('kode_akun.nama', 'LIKE', 'Kas%')
+                                            ->where('kode_akun.jenis_akun', 'Kas')
                                             ->get();
         $this->param['kode_lawan'] = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
                                             ->join('kode_induk', 'kode_akun.induk_kode', 'kode_induk.kode_induk')
-                                            ->where('kode_akun.nama', '!=', 'Kas')
-                                            ->where('kode_akun.nama', '!=', 'Bank')
                                             ->get();
         return view('pages.transaksi-kas.create', $this->param);
     }
@@ -83,11 +83,11 @@ class TransaksiKasController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'tanggal' => 'required',
+            'tanggal' => 'required|date',
             'tipe' => 'required|not_in:0',
             'kode_akun' => 'required|not_in:0',
             'kode_lawan.*' => 'required|not_in:0',
-            'subtotal.*' => 'required|numeric',
+            'subtotal.*' => 'required|numeric|gt:0',
             'keterangan.*' => 'required',
         ],[
             'required' => ':attribute harus terisi.',
@@ -100,6 +100,20 @@ class TransaksiKasController extends Controller
 
         ]);
 
+        // PERBAIKAN SAK: kunci periode ditegakkan dan akun posting diperiksa di server
+        if ($this->tanggalTerkunci('Kas', $request->tanggal)) {
+            return redirect()->back()->withInput()->withError($this->pesanTerkunci('Kas', $request->tanggal));
+        }
+        $cekAkun = $this->periksaAkunPosting($request->kode_akun, 'Kas');
+        if ($cekAkun) {
+            return redirect()->back()->withInput()->withError($cekAkun);
+        }
+        foreach ((array) $request->kode_lawan as $kodeLawan) {
+            $cekAkun = $this->periksaAkunPosting($kodeLawan);
+            if ($cekAkun) {
+                return redirect()->back()->withInput()->withError($cekAkun);
+            }
+        }
         DB::beginTransaction();
         try {
             $total = 0;
@@ -176,12 +190,10 @@ class TransaksiKasController extends Controller
             $this->param['btnLink'] = route('kas-transaksi.index');
             $this->param['kodeAkun'] = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
                                                 ->join('kode_induk', 'kode_akun.induk_kode', 'kode_induk.kode_induk')
-                                                ->where('kode_akun.nama', 'LIKE', 'Kas%')
+                                                ->where('kode_akun.jenis_akun', 'Kas')
                                                 ->get();
             $this->param['kode_lawan'] = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
                                                 ->join('kode_induk', 'kode_akun.induk_kode', 'kode_induk.kode_induk')
-                                                ->where('kode_akun.nama', '!=', 'Kas')
-                                                ->where('kode_akun.nama', '!=', 'Bank')
                                                 ->get();
             $this->param['transaksi_kas'] = TransaksiKas::find($id);
             $this->param['transaksi_kas_detail'] = TransaksiKasDetail::where('kode_transaksi_kas',$id)->get();
@@ -208,12 +220,10 @@ class TransaksiKasController extends Controller
             $this->param['btnLink'] = route('kas-transaksi.index');
             $this->param['kodeAkun'] = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
                                                 ->join('kode_induk', 'kode_akun.induk_kode', 'kode_induk.kode_induk')
-                                                ->where('kode_akun.nama', 'LIKE', 'Kas%')
+                                                ->where('kode_akun.jenis_akun', 'Kas')
                                                 ->get();
             $this->param['kode_lawan'] = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
                                                 ->join('kode_induk', 'kode_akun.induk_kode', 'kode_induk.kode_induk')
-                                                ->where('kode_akun.nama', '!=', 'Kas')
-                                                ->where('kode_akun.nama', '!=', 'Bank')
                                                 ->get();
             $this->param['transaksi_kas'] = TransaksiKas::find($id);
             $this->param['transaksi_kas_detail'] = TransaksiKasDetail::where('kode_transaksi_kas',$id)->get();
@@ -238,19 +248,17 @@ class TransaksiKasController extends Controller
 
         $kode_lawan = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
             ->join('kode_induk', 'kode_akun.induk_kode', 'kode_induk.kode_induk')
-            ->where('kode_akun.nama', '!=', 'Kas')
-            ->where('kode_akun.nama', '!=', 'Bank')
             ->get();
         return view('pages.transaksi-kas.form-edit-detail-transaksi-kas', ['hapus' => true, 'no' => $next, 'kode_lawan' => $kode_lawan, 'fields' => $fields, 'idDetail' => '0']);
     }
     public function update(Request $request, $id)
     {
         $request->validate([
-            'tanggal' => 'required',
+            'tanggal' => 'required|date',
             'tipe' => 'required|not_in:0',
             'kode_akun' => 'required|not_in:0',
             'kode_lawan.*' => 'required|not_in:0',
-            'subtotal.*' => 'required|numeric',
+            'subtotal.*' => 'required|numeric|gt:0',
             'keterangan.*' => 'required',
         ],[
             'required' => ':attribute harus terisi.',
@@ -272,6 +280,26 @@ class TransaksiKasController extends Controller
 
             if ($bulan_transaksi_kas != $edit_bulan_transasik_kas) {
                 return redirect()->back()->withStatus('tidak dapat memperbarui bulan transaksi');
+            }
+            // PERBAIKAN SAK: transaksi terkunci atau di luar periode berjalan tidak dapat diubah langsung
+            if ($this->tanggalTerkunci('Kas', $transaksi_kas->tanggal)) {
+                return redirect()->back()->withError($this->pesanTerkunci('Kas', $transaksi_kas->tanggal));
+            }
+            if (!$this->diPeriodeBerjalan($transaksi_kas->tanggal)) {
+                return redirect()->back()->withError($this->pesanBukanPeriodeBerjalan($transaksi_kas->tanggal));
+            }
+            if ($this->tanggalTerkunci('Kas', $request->tanggal)) {
+                return redirect()->back()->withError($this->pesanTerkunci('Kas', $request->tanggal));
+            }
+            $cekAkun = $this->periksaAkunPosting($request->kode_akun, 'Kas');
+            if ($cekAkun) {
+                return redirect()->back()->withError($cekAkun);
+            }
+            foreach ((array) $request->kode_lawan as $kodeLawan) {
+                $cekAkun = $this->periksaAkunPosting($kodeLawan);
+                if ($cekAkun) {
+                    return redirect()->back()->withError($cekAkun);
+                }
             }
             $tipe = $request->tipe; // PERBAIKAN SAK: tipe jurnal mengikuti tipe BARU dari form edit, bukan tipe lama di database
 
@@ -405,6 +433,10 @@ class TransaksiKasController extends Controller
     {
         try {
             $transaksiKas = TransaksiKas::withTrashed()->findOrFail($id);
+            // PERBAIKAN SAK: memulihkan transaksi ke periode terkunci sama dengan mengubah periode itu
+            if ($this->tanggalTerkunci('Kas', $transaksiKas->tanggal)) {
+                return redirect()->back()->withError($this->pesanTerkunci('Kas', $transaksiKas->tanggal));
+            }
             if ($transaksiKas->trashed()) {
                 $transaksiKas->deleted_by = null;
                 $transaksiKas->restore();
@@ -449,6 +481,13 @@ class TransaksiKasController extends Controller
     {
         try {
             $trashTransaksiKas = TransaksiKas::findOrFail($id);
+            // PERBAIKAN SAK: transaksi terkunci atau di luar periode berjalan tidak dapat dipindah ke sampah
+            if ($this->tanggalTerkunci('Kas', $trashTransaksiKas->tanggal)) {
+                return redirect()->back()->withError($this->pesanTerkunci('Kas', $trashTransaksiKas->tanggal));
+            }
+            if (!$this->diPeriodeBerjalan($trashTransaksiKas->tanggal)) {
+                return redirect()->back()->withError($this->pesanBukanPeriodeBerjalan($trashTransaksiKas->tanggal));
+            }
             // return $trashUser;
             if ($trashTransaksiKas->deleted_by = auth()->user()->id) {
                 $trashTransaksiKas->update();
@@ -472,8 +511,6 @@ class TransaksiKasController extends Controller
         $next = $_GET['biggestNo'] + 1;
         $kode_lawan = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
             ->join('kode_induk', 'kode_akun.induk_kode', 'kode_induk.kode_induk')
-            ->where('kode_akun.nama', '!=', 'Kas')
-            ->where('kode_akun.nama', '!=', 'Bank')
             ->get();
         return view('pages.transaksi-kas.form-detail-transaksi-kas', ['hapus' => true, 'no' => $next, 'kode_lawan' => $kode_lawan]);
     }
@@ -483,7 +520,7 @@ class TransaksiKasController extends Controller
         try {
             $this->param['kodeAkun'] = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
             // ->join('kode_induk', 'kode_akun.induk_kode', 'kode_induk.kode_induk')
-                                                ->where('kode_akun.nama', 'LIKE', 'Kas%')
+                                                ->where('kode_akun.jenis_akun', 'Kas')
                                                 ->get();
             $this->param['report_kas'] = null;
             return view('pages.transaksi-kas.laporan-kas',$this->param);
@@ -508,7 +545,7 @@ class TransaksiKasController extends Controller
         // return $request;
         try {
             $this->param['kodeAkun'] = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
-                                                ->where('kode_akun.nama', 'LIKE', 'Kas%')
+                                                ->where('kode_akun.jenis_akun', 'Kas')
                                                 ->get();
             $this->param['report_kas'] = TransaksiKas::select(
                                                     'transaksi_kas.kode_transaksi_kas',
@@ -547,7 +584,7 @@ class TransaksiKasController extends Controller
         // return $request;
         try {
             $this->param['kodeAkun'] = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
-                                                ->where('kode_akun.nama', 'LIKE', 'Kas%')
+                                                ->where('kode_akun.jenis_akun', 'Kas')
                                                 ->get();
             $this->param['report_kas'] = TransaksiKas::select(
                                                     'transaksi_kas.kode_transaksi_kas',
@@ -570,5 +607,16 @@ class TransaksiKasController extends Controller
         }catch(\Illuminate\Database\QueryException $e){
             return redirect()->back()->withStatus('Terjadi kesalahan pada database : ' . $e->getMessage());
         }
+    }
+
+    // PERBAIKAN SAK: buat Jurnal Koreksi (memorial pembalik) atas transaksi ini
+    public function koreksi($id)
+    {
+        $transaksi = TransaksiKas::findOrFail($id);
+        list($berhasil, $pesan) = $this->buatJurnalKoreksi('Kas', $transaksi->kode_transaksi_kas);
+        if ($berhasil) {
+            return redirect()->route('memorial.index')->withStatus($pesan);
+        }
+        return redirect()->back()->withError($pesan);
     }
 }

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\v1;
 
 use App\Http\Controllers\Controller;
 use App\Http\Traits\SequenceTrait;
+use App\Http\Traits\PeriodeGuard;
+use App\Http\Traits\JurnalKoreksi;
 use App\Models\Jurnal;
 use App\Models\KodeAkun;
 use App\Models\Memorial;
@@ -19,7 +21,7 @@ class MemorialController extends Controller
 {
     private $param;
 
-    use SequenceTrait;
+    use SequenceTrait, PeriodeGuard, JurnalKoreksi;
 
     public function __construct()
     {
@@ -74,11 +76,11 @@ class MemorialController extends Controller
     {
         // return $request;
         $request->validate([
-            'tanggal' => 'required',
+            'tanggal' => 'required|date',
             'tipe' => 'required|not_in:0',
             'kode_akun.*' => 'required|not_in:0',
             'kode_lawan.*' => 'required|not_in:0',
-            'subtotal.*' => 'required',
+            'subtotal.*' => 'required|numeric|gt:0',
             'keterangan.*' => 'required',
         ],[
             'required' => ':attribute harus terisi.',
@@ -90,6 +92,22 @@ class MemorialController extends Controller
             'keterangan.*' => 'keterangan'
 
         ]);
+        // PERBAIKAN SAK: kunci periode ditegakkan dan akun posting diperiksa di server
+        if ($this->tanggalTerkunci('Bank Memorial', $request->tanggal)) {
+            return redirect()->back()->withInput()->withError($this->pesanTerkunci('Bank Memorial', $request->tanggal));
+        }
+        foreach ((array) $request->kode_akun as $kodeAkun) {
+            $cekAkun = $this->periksaAkunPosting($kodeAkun);
+            if ($cekAkun) {
+                return redirect()->back()->withInput()->withError($cekAkun);
+            }
+        }
+        foreach ((array) $request->kode_lawan as $kodeLawan) {
+            $cekAkun = $this->periksaAkunPosting($kodeLawan);
+            if ($cekAkun) {
+                return redirect()->back()->withInput()->withError($cekAkun);
+            }
+        }
         DB::beginTransaction();
         try {
             $total = 0;
@@ -236,11 +254,11 @@ class MemorialController extends Controller
     public function update(Request $request, $id)
     {
         $request->validate([
-            'tanggal' => 'required',
+            'tanggal' => 'required|date',
             'tipe' => 'required|not_in:0',
             'kode.*' => 'required|not_in:0',
             'lawan.*' => 'required|not_in:0',
-            'subtotal.*' => 'required',
+            'subtotal.*' => 'required|numeric|gt:0',
             'keterangan.*' => 'required',
         ],[
             'required' => ':attribute harus terisi.',
@@ -261,6 +279,28 @@ class MemorialController extends Controller
 
             if ($bulanMemorial != $editBulanMemorial) {
                 return redirect()->back()->withStatus('Tidak dapat merubah bulan transaksi');
+            }
+            // PERBAIKAN SAK: transaksi terkunci atau di luar periode berjalan tidak dapat diubah langsung
+            if ($this->tanggalTerkunci('Bank Memorial', $memorial->tanggal)) {
+                return redirect()->back()->withError($this->pesanTerkunci('Bank Memorial', $memorial->tanggal));
+            }
+            if (!$this->diPeriodeBerjalan($memorial->tanggal)) {
+                return redirect()->back()->withError($this->pesanBukanPeriodeBerjalan($memorial->tanggal));
+            }
+            if ($this->tanggalTerkunci('Bank Memorial', $request->tanggal)) {
+                return redirect()->back()->withError($this->pesanTerkunci('Bank Memorial', $request->tanggal));
+            }
+            foreach ((array) $request->kode as $kodeAkun) {
+                $cekAkun = $this->periksaAkunPosting($kodeAkun);
+                if ($cekAkun) {
+                    return redirect()->back()->withError($cekAkun);
+                }
+            }
+            foreach ((array) $request->lawan as $kodeLawan) {
+                $cekAkun = $this->periksaAkunPosting($kodeLawan);
+                if ($cekAkun) {
+                    return redirect()->back()->withError($cekAkun);
+                }
             }
 
             $newTotal = 0;
@@ -414,6 +454,10 @@ class MemorialController extends Controller
     {
         try {
             $transaksiMemorial = Memorial::withTrashed()->findOrFail($id);
+            // PERBAIKAN SAK: memulihkan transaksi ke periode terkunci sama dengan mengubah periode itu
+            if ($this->tanggalTerkunci('Bank Memorial', $transaksiMemorial->tanggal)) {
+                return redirect()->back()->withError($this->pesanTerkunci('Bank Memorial', $transaksiMemorial->tanggal));
+            }
             if ($transaksiMemorial->trashed()) {
                 $transaksiMemorial->restore();
                 Jurnal::onlyTrashed()->where('kode_transaksi', $id)->restore(); // PERBAIKAN SAK: jurnal ikut dipulihkan
@@ -436,6 +480,13 @@ class MemorialController extends Controller
     {
         try {
             $trashMemorial = Memorial::findOrFail($id);
+            // PERBAIKAN SAK: transaksi terkunci atau di luar periode berjalan tidak dapat dipindah ke sampah
+            if ($this->tanggalTerkunci('Bank Memorial', $trashMemorial->tanggal)) {
+                return redirect()->back()->withError($this->pesanTerkunci('Bank Memorial', $trashMemorial->tanggal));
+            }
+            if (!$this->diPeriodeBerjalan($trashMemorial->tanggal)) {
+                return redirect()->back()->withError($this->pesanBukanPeriodeBerjalan($trashMemorial->tanggal));
+            }
             // return $trashUser;
             // if ($trashMemorial->deleted_by = auth()->user()->id) {
             //     $trashMemorial->update();
@@ -535,5 +586,16 @@ class MemorialController extends Controller
         }catch(\Illuminate\Database\QueryException $e){
             return redirect()->back()->withStatus('Terjadi kesalahan pada database : ' . $e->getMessage());
         }
+    }
+
+    // PERBAIKAN SAK: buat Jurnal Koreksi (memorial pembalik) atas memorial ini
+    public function koreksi($id)
+    {
+        $transaksi = Memorial::findOrFail($id);
+        list($berhasil, $pesan) = $this->buatJurnalKoreksi('Memorial', $transaksi->kode_memorial);
+        if ($berhasil) {
+            return redirect()->route('memorial.index')->withStatus($pesan);
+        }
+        return redirect()->back()->withError($pesan);
     }
 }

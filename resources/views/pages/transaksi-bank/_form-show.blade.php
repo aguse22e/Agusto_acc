@@ -27,6 +27,16 @@
             </select>
         </div>
     </div>
+    <div class="form-group row">
+        <div class="col-sm-4">
+            <label class="col-form-label">No Referensi Bank</label>
+            <input class="form-control" type="text" value="{{ $transaksi_bank->no_referensi }}" readonly/>
+        </div>
+        <div class="col-sm-4">
+            <label class="col-form-label">Status Kliring</label>
+            <input class="form-control" type="text" value="{{ $transaksi_bank->status_kliring }}{{ $transaksi_bank->tanggal_kliring ? ' - ' . date('d-m-Y', strtotime($transaksi_bank->tanggal_kliring)) : '' }}" readonly/>
+        </div>
+    </div>
     <div class="card-header">
         <h5>Detail Transaksi Bank</h5>
     </div>

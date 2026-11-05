@@ -40,8 +40,9 @@ class ArusKasController extends Controller
      */
     private function akunKas()
     {
-        return KodeAkun::where('nama', 'LIKE', 'Kas%')
-            ->orWhere('nama', 'LIKE', 'Bank%')
+        // PERBAIKAN SAK: akun kas dan setara kas dikenali dari penanda
+        // jenis_akun pada bagan akun, bukan lagi dari awalan nama akun.
+        return KodeAkun::whereIn('jenis_akun', ['Kas', 'Bank'])
             ->pluck('kode_akun')->toArray();
     }
 

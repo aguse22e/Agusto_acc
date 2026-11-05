@@ -77,6 +77,7 @@ class KodeAkunController extends Controller
             'induk_kode' => 'required|not_in:0',
             'kode_akun' => 'required|unique:kode_akun',
             'tipe' => 'required|not_in:0',
+            'jenis_akun' => 'required|in:Kas,Bank,Lainnya',
             'nama' => 'required',
         ],[
             'required' => ':attribute harus terisi.',
@@ -93,6 +94,7 @@ class KodeAkunController extends Controller
             $addData->kode_akun = $kode_akun;
             $addData->induk_kode = $request->induk_kode;
             $addData->tipe = $request->tipe;
+            $addData->jenis_akun = $request->jenis_akun;
             $addData->nama = str_replace('-',' ',$request->nama);
             $addData->save();
             return redirect()->route('kode-akun.index')->withStatus('Berhasil menambahkan data.');
@@ -153,6 +155,7 @@ class KodeAkunController extends Controller
             'kode_akun' => 'required'.$isUniqueKodeAkun,
             'nama' => 'required'.$isUniqueNamaAkun,
             'tipe' => 'required|not_in:0',
+            'jenis_akun' => 'required|in:Kas,Bank,Lainnya',
         ],[
             'unique' => ':attribute sudah tersedia.',
             'required' => ':attribute harus terisi.',
@@ -168,6 +171,7 @@ class KodeAkunController extends Controller
             $updateData->kode_akun = $kode_akun;
             $updateData->induk_kode = $request->induk_kode;
             $updateData->tipe = $request->tipe;
+            $updateData->jenis_akun = $request->jenis_akun;
             $updateData->nama = str_replace('-',' ',$request->nama);
             $updateData->save();
             return redirect()->route('kode-akun.index')->withStatus('Berhasil menambahkan data.');

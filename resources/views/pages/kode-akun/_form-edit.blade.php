@@ -61,6 +61,24 @@
     </div>
 
 
+
+    <div class="form-group row">
+        <label class="col-sm-2 col-form-label">Jenis Akun</label>
+        <div class="col-sm-10">
+            <select name="jenis_akun" id="jenis_akun" class="form-control @error('jenis_akun') is-invalid @enderror">
+                <option value="Lainnya" {{ old('jenis_akun', $data->jenis_akun ?? 'Lainnya') == 'Lainnya' ? ' selected' : '' }}>Lainnya</option>
+                <option value="Kas" {{ old('jenis_akun', $data->jenis_akun ?? '') == 'Kas' ? ' selected' : '' }}>Kas</option>
+                <option value="Bank" {{ old('jenis_akun', $data->jenis_akun ?? '') == 'Bank' ? ' selected' : '' }}>Bank</option>
+            </select>
+            <small class="form-text text-muted">Penanda sifat akun. Akun utama Transaksi Kas harus berjenis Kas dan akun utama Transaksi Bank harus berjenis Bank.</small>
+            @error('jenis_akun')
+                <div class="invalid-feedback">
+                    {{ $message }}
+                </div>
+            @enderror
+        </div>
+    </div>
+
     <button type="submit" class="btn btn-sm btn-primary"><i class="feather icon-save"></i>Simpan</button>
 </form>
 

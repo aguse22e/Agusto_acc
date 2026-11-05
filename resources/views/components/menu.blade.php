@@ -161,6 +161,14 @@
                                 <span class="pcoded-mtext">Laporan Bank</span>
                             </a>
                         </li>
+                        <li class="{{ Request::segment(2) == 'rekonsiliasi' ? 'active' : '' }}">
+                            <a href="{{ url('bank/rekonsiliasi') }}" class="waves-effect waves-dark">
+                                <span class="pcoded-micon">
+                                    <i class="feather icon-bookmark"></i>
+                                </span>
+                                <span class="pcoded-mtext">Rekonsiliasi Bank</span>
+                            </a>
+                        </li>
                     </ul>
                 </li>
             </ul>

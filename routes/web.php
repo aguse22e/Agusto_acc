@@ -7,6 +7,7 @@ use App\Http\Controllers\v1\KodeAkunController;
 use App\Http\Controllers\v1\KunciTransaksiController;
 use App\Http\Controllers\v1\MemorialController;
 use App\Http\Controllers\v1\TransaksiBankController;
+use App\Http\Controllers\v1\RekonsiliasiBankController;
 use App\Http\Controllers\v1\TransaksiKasController;
 use App\Http\Controllers\v1\UsersController;
 use App\Http\Controllers\v1\CustomerController;
@@ -122,6 +123,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/kas-transaksi/trash',[TransaksiKasController::class,'trashTransaksiKas'])->name('transaksiKas.trash');
         Route::get('/kas-transaksi/restore/{id}',[TransaksiKasController::class,'restoretransaksiKas'])->name('transaksiKas.restore');
         Route::delete('/kas-transaksi/{id}/hapus',[TransaksiKasController::class,'hapusPermanen'])->name('transaksiKas.hapusPermanen');
+        Route::post('/kas-transaksi/{id}/koreksi',[TransaksiKasController::class,'koreksi'])->name('transaksiKas.koreksi');
         Route::resource('/kas-transaksi',TransaksiKasController::class);
         Route::prefix('laporan-kas')->group(function () {
             Route::get('/',[TransaksiKasController::class,'reportKas']);
@@ -139,7 +141,12 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/bank-transaksi/trash',[TransaksiBankController::class,'trashTransaksiBank'])->name('transaksiBank.trash');
         Route::get('/bank-transaksi/restore/{id}',[TransaksiBankController::class,'restoretransaksiBank'])->name('transaksiBank.restore');
         Route::delete('/bank-transaksi/{id}/hapus',[TransaksiBankController::class,'hapusPermanen'])->name('transaksiBank.hapusPermanen');
+        Route::post('/bank-transaksi/{id}/koreksi',[TransaksiBankController::class,'koreksi'])->name('transaksiBank.koreksi');
         Route::resource('/bank-transaksi',TransaksiBankController::class);
+        // Rekonsiliasi Bank
+        Route::get('/rekonsiliasi',[RekonsiliasiBankController::class,'index'])->name('rekonsiliasi-bank.index');
+        Route::post('/rekonsiliasi/saldo',[RekonsiliasiBankController::class,'simpanSaldoKoran'])->name('rekonsiliasi-bank.saldo');
+        Route::post('/rekonsiliasi/kliring',[RekonsiliasiBankController::class,'simpanKliring'])->name('rekonsiliasi-bank.kliring');
         Route::prefix('laporan-bank')->group(function () {
             Route::get('/',[TransaksiBankController::class,'reportBank']);
             Route::get('result',[TransaksiBankController::class,'getReport'])->name('laporan-bank');
@@ -155,6 +162,7 @@ Route::middleware(['auth'])->group(function () {
         Route::get('/memorial/trash',[MemorialController::class,'trashTransaksiMemorial'])->name('transaksiMemorial.trash');
         Route::get('/memorial/restore/{id}',[MemorialController::class,'restoretransaksiMemorial'])->name('transaksiMemorial.restore');
         Route::delete('/memorial/{id}/hapus',[MemorialController::class,'hapusPermanen'])->name('transaksiMemorial.hapusPermanen');
+        Route::post('/memorial/{id}/koreksi',[MemorialController::class,'koreksi'])->name('transaksiMemorial.koreksi');
         Route::resource('/memorial', MemorialController::class);
         Route::prefix('laporan-memorial')->group(function () {
             Route::get('/',[MemorialController::class,'reportMemorial']);

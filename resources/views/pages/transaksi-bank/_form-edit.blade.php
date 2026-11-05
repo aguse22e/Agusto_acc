@@ -49,6 +49,16 @@
             @endif
         </div>
     </div>
+    <div class="form-group row">
+        <div class="col-sm-4">
+            <label class="col-form-label">No Referensi Bank (nomor cek / referensi transfer, boleh kosong)</label>
+            <input class="form-control" type="text" name="no_referensi" maxlength="50" value="{{ old('no_referensi', $transaksi_bank->no_referensi) }}"/>
+        </div>
+        <div class="col-sm-4">
+            <label class="col-form-label">Status Kliring (diatur dari Rekonsiliasi Bank)</label>
+            <input class="form-control" type="text" value="{{ $transaksi_bank->status_kliring }}{{ $transaksi_bank->tanggal_kliring ? ' - ' . date('d-m-Y', strtotime($transaksi_bank->tanggal_kliring)) : '' }}" readonly/>
+        </div>
+    </div>
     <div class="card-header">
         <h5>Detail Transaksi Bank</h5>
     </div>

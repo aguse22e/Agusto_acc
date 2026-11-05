@@ -104,6 +104,7 @@ CREATE TABLE IF NOT EXISTS `kode_akun` (
   `deleted_at` timestamp NULL DEFAULT NULL,
   `deleted_by` bigint unsigned DEFAULT NULL,
   `tipe` enum('Debit','Kredit') COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `jenis_akun` enum('Kas','Bank','Lainnya') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Lainnya',
   PRIMARY KEY (`kode_akun`),
   KEY `kode_akun_induk_kode_foreign` (`induk_kode`),
   KEY `kode_akun_deleted_by_foreign` (`deleted_by`),
@@ -112,19 +113,19 @@ CREATE TABLE IF NOT EXISTS `kode_akun` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Dumping data for table laravelaccoun.kode_akun: ~11 rows (approximately)
-INSERT INTO `kode_akun` (`kode_akun`, `induk_kode`, `nama`, `created_at`, `updated_at`, `deleted_at`, `deleted_by`, `tipe`) VALUES
-	('1000', '1001', 'Kas & Bank', '2025-05-22 18:50:07', '2025-05-22 18:59:48', NULL, NULL, 'Debit'),
-	('1110', '1001', 'Kas Kecil', '2025-05-22 18:50:37', '2025-05-22 18:59:56', NULL, NULL, 'Debit'),
-	('1120', '1001', 'Kas Besar', '2025-05-22 18:51:29', '2025-05-22 19:00:10', NULL, NULL, 'Debit'),
-	('1210', '1001', 'Kas Bank BCA', '2025-05-22 18:52:27', '2025-06-01 02:00:42', NULL, NULL, 'Debit'),
-	('1220', '1001', 'Kas Bank Mandiri', '2025-05-22 18:52:48', '2025-05-22 19:00:23', NULL, NULL, 'Debit'),
-	('2000', '2001', 'Hutang Dagang', '2025-05-22 19:00:47', '2025-05-22 19:00:47', NULL, NULL, 'Kredit'),
-	('2100', '2001', 'Hutang Supplier', '2025-05-22 19:01:15', '2025-05-22 19:01:15', NULL, NULL, 'Kredit'),
-	('2200', '2001', 'Hutang Karyawan', '2025-05-22 19:01:31', '2025-05-22 19:01:31', NULL, NULL, 'Kredit'),
-	('3000', '3001', 'Modal', '2025-05-22 19:02:03', '2025-05-22 19:02:03', NULL, NULL, 'Kredit'),
-	('3100', '3001', 'Modal Usaha', '2025-05-22 19:02:23', '2025-05-22 19:02:23', NULL, NULL, 'Kredit'),
-	('320', '1001', 'sdfsdf', '2025-06-01 01:57:12', '2025-06-01 01:57:25', NULL, NULL, 'Debit'),
-	('4000', '4001', 'Pendapatan', '2025-05-22 19:03:54', '2025-05-22 19:03:54', NULL, NULL, 'Kredit'),
+INSERT INTO `kode_akun` (`kode_akun`, `induk_kode`, `nama`, `created_at`, `updated_at`, `deleted_at`, `deleted_by`, `tipe`, `jenis_akun`) VALUES
+	('1000', '1001', 'Kas & Bank', '2025-05-22 18:50:07', '2025-05-22 18:59:48', NULL, NULL, 'Debit', 'Kas'),
+	('1110', '1001', 'Kas Kecil', '2025-05-22 18:50:37', '2025-05-22 18:59:56', NULL, NULL, 'Debit', 'Kas'),
+	('1120', '1001', 'Kas Besar', '2025-05-22 18:51:29', '2025-05-22 19:00:10', NULL, NULL, 'Debit', 'Kas'),
+	('1210', '1001', 'Kas Bank BCA', '2025-05-22 18:52:27', '2025-06-01 02:00:42', NULL, NULL, 'Debit', 'Bank'),
+	('1220', '1001', 'Kas Bank Mandiri', '2025-05-22 18:52:48', '2025-05-22 19:00:23', NULL, NULL, 'Debit', 'Bank'),
+	('2000', '2001', 'Hutang Dagang', '2025-05-22 19:00:47', '2025-05-22 19:00:47', NULL, NULL, 'Kredit', 'Lainnya'),
+	('2100', '2001', 'Hutang Supplier', '2025-05-22 19:01:15', '2025-05-22 19:01:15', NULL, NULL, 'Kredit', 'Lainnya'),
+	('2200', '2001', 'Hutang Karyawan', '2025-05-22 19:01:31', '2025-05-22 19:01:31', NULL, NULL, 'Kredit', 'Lainnya'),
+	('3000', '3001', 'Modal', '2025-05-22 19:02:03', '2025-05-22 19:02:03', NULL, NULL, 'Kredit', 'Lainnya'),
+	('3100', '3001', 'Modal Usaha', '2025-05-22 19:02:23', '2025-05-22 19:02:23', NULL, NULL, 'Kredit', 'Lainnya'),
+	('320', '1001', 'sdfsdf', '2025-06-01 01:57:12', '2025-06-01 01:57:25', NULL, NULL, 'Debit', 'Lainnya'),
+	('4000', '4001', 'Pendapatan', '2025-05-22 19:03:54', '2025-05-22 19:03:54', NULL, NULL, 'Kredit', 'Lainnya'),
 	('4100', '4001', 'Pendapatan Dagang', '2025-05-22 19:04:21', '2025-05-22 19:04:21', NULL, NULL, 'Kredit');
 
 -- Dumping structure for table laravelaccoun.kode_induk
@@ -175,6 +176,7 @@ CREATE TABLE IF NOT EXISTS `memorial` (
   `kode_memorial` varchar(20) COLLATE utf8mb4_unicode_ci NOT NULL,
   `tanggal` date NOT NULL,
   `tipe` enum('Masuk','Keluar') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `koreksi_dari` varchar(20) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
   `total` decimal(13,2) NOT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT NULL,
@@ -339,6 +341,9 @@ CREATE TABLE IF NOT EXISTS `transaksi_bank` (
   `tanggal` date NOT NULL,
   `akun_kode` varchar(255) COLLATE utf8mb4_unicode_ci NOT NULL,
   `tipe` enum('Masuk','Keluar') COLLATE utf8mb4_unicode_ci NOT NULL,
+  `no_referensi` varchar(50) COLLATE utf8mb4_unicode_ci DEFAULT NULL,
+  `status_kliring` enum('Belum','Kliring') COLLATE utf8mb4_unicode_ci NOT NULL DEFAULT 'Belum',
+  `tanggal_kliring` date DEFAULT NULL,
   `total` decimal(13,2) NOT NULL,
   `deleted_at` timestamp NULL DEFAULT NULL,
   `deleted_by` bigint unsigned DEFAULT NULL,
@@ -543,4 +548,17 @@ CREATE TABLE IF NOT EXISTS `jadwal_kerja` (
   KEY `jadwal_kerja_shift_id_foreign` (`shift_id`),
   CONSTRAINT `jadwal_kerja_karyawan_id_foreign` FOREIGN KEY (`karyawan_id`) REFERENCES `karyawan` (`id`),
   CONSTRAINT `jadwal_kerja_shift_id_foreign` FOREIGN KEY (`shift_id`) REFERENCES `shift` (`id`) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- MODUL BARU Rekonsiliasi Bank (migration 2026_11_05_000001): rekonsiliasi_bank
+CREATE TABLE IF NOT EXISTS `rekonsiliasi_bank` (
+  `id` bigint unsigned NOT NULL AUTO_INCREMENT,
+  `akun_kode` varchar(15) COLLATE utf8mb4_unicode_ci NOT NULL,
+  `periode` date NOT NULL,
+  `saldo_koran` decimal(15,2) NOT NULL DEFAULT '0.00',
+  `created_at` timestamp NULL DEFAULT NULL,
+  `updated_at` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `rekonsiliasi_bank_akun_kode_periode_unique` (`akun_kode`, `periode`),
+  CONSTRAINT `rekonsiliasi_bank_akun_kode_foreign` FOREIGN KEY (`akun_kode`) REFERENCES `kode_akun` (`kode_akun`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
