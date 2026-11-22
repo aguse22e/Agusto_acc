@@ -34,11 +34,6 @@ use Illuminate\Support\Facades\Route;
 | contains the "web" middleware group. Now create something great!
 |
 */
-Route::get('lupa-password-email', [UsersController::class, 'forgotPasswordEmail'])->name('lupa_password_email');
-Route::put('lupa-password-email', [UsersController::class, 'forgotPasswordEmailProcess'])->name('lupa_password_email_process');
-Route::get('lupa-password/{email}', [UsersController::class, 'forgotPassword'])->name('lupa_password_page');
-Route::post('lupa-password', [UsersController::class, 'forgotPasswordProcess'])->name('lupa_password');
-
 Route::get('/', function () {
     return view('auth.login');
 });
@@ -46,16 +41,19 @@ Route::get('/', function () {
 // Route::get('/dashboard', function () {
 //     return view('dashboard');
 // })->middleware(['auth'])->name('dashboard');
-Route::middleware(['auth'])->group(function () {
+Route::middleware(['auth', 'viewer.readonly'])->group(function () {
     // dashboard
     // action([DashboardController::class, 'index']);
     Route::get('/dashboard',[DashboardController::class,'index'])->name('dashboard');
-    // users trash
-    Route::get('/user/trash',[UsersController::class,'trashUser'])->name('user.trash');
-    Route::get('/user/restore/{id}',[UsersController::class,'restoreUser'])->name('user.restore');
-    Route::delete('/user/{id}/hapus',[UsersController::class,'hapusPermanen'])->name('user.hapusPermanen');
-    // Users Management
-    Route::resource('/user', UsersController::class);
+    // Users Management — hanya Administrator (data user + level bukan untuk Viewer)
+    Route::middleware(['level:Administrator'])->group(function () {
+        // users trash
+        Route::get('/user/trash',[UsersController::class,'trashUser'])->name('user.trash');
+        Route::get('/user/restore/{id}',[UsersController::class,'restoreUser'])->name('user.restore');
+        Route::delete('/user/{id}/hapus',[UsersController::class,'hapusPermanen'])->name('user.hapusPermanen');
+        // Users Management
+        Route::resource('/user', UsersController::class);
+    });
 
     // Supplier Management
     Route::get('/supplier/trash',[SupplierController::class,'trashSupplier'])->name('supplier.trash');

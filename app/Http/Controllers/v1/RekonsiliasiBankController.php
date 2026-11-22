@@ -92,9 +92,11 @@ class RekonsiliasiBankController extends Controller
 
             return view('pages.rekonsiliasi-bank.index', $this->param);
         } catch (QueryException $e) {
-            return redirect()->back()->withError('Terjadi kesalahan.' . $e->getMessage());
+            report($e);
+            return redirect()->back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return redirect()->back()->withError('Terjadi kesalahan.' . $e->getMessage());
+            report($e);
+            return redirect()->back()->withError('Terjadi kesalahan.');
         }
     }
 
@@ -125,9 +127,11 @@ class RekonsiliasiBankController extends Controller
             return redirect()->route('rekonsiliasi-bank.index', ['akun' => $request->akun, 'periode' => $request->periode])
                 ->withStatus('Saldo rekening koran berhasil disimpan.');
         } catch (QueryException $e) {
-            return redirect()->back()->withError('Terjadi kesalahan.' . $e->getMessage());
+            report($e);
+            return redirect()->back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return redirect()->back()->withError('Terjadi kesalahan.' . $e->getMessage());
+            report($e);
+            return redirect()->back()->withError('Terjadi kesalahan.');
         }
     }
 
@@ -158,9 +162,11 @@ class RekonsiliasiBankController extends Controller
             return redirect()->route('rekonsiliasi-bank.index', ['akun' => $request->akun, 'periode' => $request->periode])
                 ->withStatus('Status kliring berhasil disimpan.');
         } catch (QueryException $e) {
-            return redirect()->back()->withError('Terjadi kesalahan.' . $e->getMessage());
+            report($e);
+            return redirect()->back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return redirect()->back()->withError('Terjadi kesalahan.' . $e->getMessage());
+            report($e);
+            return redirect()->back()->withError('Terjadi kesalahan.');
         }
     }
 }

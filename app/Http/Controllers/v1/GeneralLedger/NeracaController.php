@@ -112,7 +112,8 @@ class NeracaController extends Controller
                 $this->param['neraca'] = $this->hitungNeraca($tanggalSampai);
             }
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withStatus($e->getMessage());
+            report($e);
+            return back()->withStatus('Terjadi kesalahan.');
         }
 
         return \view('pages.general-ledger.neraca.index', $this->param);

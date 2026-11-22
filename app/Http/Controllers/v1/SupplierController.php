@@ -39,10 +39,12 @@ class SupplierController extends Controller
 
             $this->param['supplier'] = $getSupplier->paginate(10);
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
         catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
 
         return view('pages.supplier.index', $this->param);
@@ -190,10 +192,12 @@ class SupplierController extends Controller
             $this->param['supplier'] = $getSupplier->paginate(10);
             return view('pages.supplier.listTrash',$this->param);
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
         catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
     public function restoreSupplier($id)
@@ -211,10 +215,12 @@ class SupplierController extends Controller
             }
 
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
         catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
 
     }
@@ -227,11 +233,13 @@ class SupplierController extends Controller
 
         } catch (\Illuminate\Database\QueryException $e) {
             return $e;
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
         catch (Exception $e) {
             return $e;
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 }

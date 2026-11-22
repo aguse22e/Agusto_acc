@@ -42,10 +42,12 @@ class KodeAkunController extends Controller
 
             $this->param['kode_akun'] = $getKodeAkun->paginate(10);
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
         catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
 
         return view('pages.kode-akun.index', $this->param);
@@ -229,10 +231,12 @@ class KodeAkunController extends Controller
             $this->param['kode_akun'] = $getKodeAkun->paginate(10);
             return view('pages.kode-akun.listTrash',$this->param);
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
         catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
 
         // return view('pages.users.index', $this->param);
@@ -253,10 +257,12 @@ class KodeAkunController extends Controller
             }
 
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
         catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
 
     }
@@ -269,10 +275,12 @@ class KodeAkunController extends Controller
             return redirect()->route('kodeAkun.trash')->withStatus('Data berhasil dihapus permanen.');
 
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
         catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 }

@@ -36,10 +36,12 @@ class KunciTransaksiController extends Controller
 
             $this->param['kunci_transaksi'] = $getKunciTransaksi->paginate(10);
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
         catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
 
         return view('pages.kunci-transaksi.index', $this->param);

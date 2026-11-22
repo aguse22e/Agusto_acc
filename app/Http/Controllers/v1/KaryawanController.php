@@ -44,9 +44,11 @@ class KaryawanController extends Controller
 
             $this->param['karyawan'] = $getKaryawan->paginate(10);
         } catch (QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
 
         return view('pages.karyawan.index', $this->param);
@@ -165,9 +167,11 @@ class KaryawanController extends Controller
             $karyawan->delete();
             return redirect()->route('karyawan.index')->withStatus('Data berhasil dipindahkan ke tempat sampah.');
         } catch (QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 
@@ -186,9 +190,11 @@ class KaryawanController extends Controller
             $this->param['karyawan'] = $getKaryawan->paginate(10);
             return view('pages.karyawan.listTrash', $this->param);
         } catch (QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 
@@ -203,9 +209,11 @@ class KaryawanController extends Controller
                 return redirect()->route('karyawan.trash')->withError('Data tidak ada dalam tempat sampah.');
             }
         } catch (QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 
@@ -223,9 +231,11 @@ class KaryawanController extends Controller
                 return redirect()->route('karyawan.trash')->withError('Data tidak ada dalam tempat sampah.');
             }
         } catch (QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 }

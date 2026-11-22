@@ -43,10 +43,12 @@ class UsersController extends Controller
 
             $this->param['user'] = $getUsers->paginate(10);
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
         catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
 
         return view('pages.users.index', $this->param);
@@ -173,10 +175,8 @@ class UsersController extends Controller
     {
         try {
             $trashUser = User::findOrFail($id);
-            // return $trashUser;
-            if ($trashUser->deleted_by = auth()->user()->id) {
-                $trashUser->update();
-            }
+            $trashUser->deleted_by = auth()->user()->id;
+            $trashUser->save();
             $trashUser->delete();
             return redirect()->route('user.index')->withStatus('Berhasil memindahkan ke sampah');
 
@@ -196,28 +196,19 @@ class UsersController extends Controller
 
     public function updatePassword(Request $request, $id)
     {
+        // $id diabaikan: user hanya boleh mengganti kata sandinya sendiri,
+        // bukan kata sandi user lain lewat URL.
+        $user = $request->user();
 
-        // return $request;
-        $user = User::findOrFail($id);;
-        $old = $request->old_pass;
-        $new = $request->password;
-
-        if(!\Hash::check($old, $user->password))
-            return back()->withError('Password lama tidak cocok.');
-
-        if(\Hash::check($new, $user->password))
-            return back()->withError('Password baru tidak boleh sama dengan password lama.');
-
-        $validatedData = $request->validate(
+        $request->validate(
             [
                 'old_pass' => 'required',
                 'password' => 'required',
-                'confirmation' => 'required|same:password'
+                'confirmation' => 'required|same:password',
             ],
             [
                 'required' => ':attribute harus diisi.',
-                'password.unique' => 'Password baru tidak boleh sama dengan password lama.',
-                'same' => 'Konfirmasi password harus sesuai.'
+                'same' => 'Konfirmasi password harus sesuai.',
             ],
             [
                 'old_pass' => 'Password lama',
@@ -226,145 +217,23 @@ class UsersController extends Controller
             ]
         );
 
-        try {
-            $user->password = \Hash::make($request->get('password'));
-            // $user->password = $request->get('password');
+        if (! \Hash::check($request->old_pass, $user->password)) {
+            return back()->withError('Password lama tidak cocok.');
+        }
 
+        if (\Hash::check($request->password, $user->password)) {
+            return back()->withError('Password baru tidak boleh sama dengan password lama.');
+        }
+
+        try {
+            $user->password = \Hash::make($request->password);
             $user->save();
-
-
-        } catch (\Exception $e) {
-            return redirect()->back()->withError('Terjadi kesalahan.');
-        } catch (\Illuminate\Database\QueryException $e) {
-            return redirect()->back()->withError('Terjadi kesalahan.');
-        }
-
-        return back()->withStatus('Password berhasil diperbarui.');
-    }
-    public function trashUser(Request $request)
-    {
-        $this->param['btnText'] = 'Tambah User';
-        $this->param['btnLink'] = route('user.create');
-        $this->param['btnTrashText'] = 'Lihat Sampah';
-        $this->param['btnTrashLink'] = route('user.trash');
-
-        try {
-            $keyword = $request->get('keyword');
-            $getUsers = User::onlyTrashed();
-
-            if ($keyword) {
-                $getUsers->where('name', 'LIKE', "%{$keyword}%")->orWhere('email', 'LIKE', "%{$keyword}%");
-            }
-
-            $this->param['user'] = $getUsers->paginate(10);
-            return view('pages.users.listTrash',$this->param);
-        } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
-        }
-        catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
-        }
-
-        // return view('pages.users.index', $this->param);
-        // $this->param['data'] = User::onlyTrashed()->get();
-    }
-    public function restoreUser($id)
-    {
-        try {
-            $user = User::withTrashed()->findOrFail($id);
-            if ($user->trashed()) {
-                $user->deleted_by = null;
-                $user->restore();
-                return redirect()->route('user.trash')->withStatus('Data berhasil di kembalikan.');
-            }
-            else
-            {
-                return redirect()->route('user.trash')->withError('Data tidak ada dalam sampah.');
-            }
-
-        } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
-        }
-        catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
-        }
-
-    }
-    public function hapusPermanen($id)
-    {
-        // return   $id;
-        try {
-            $deleteUser = User::onlyTrashed()->where('id',$id);
-            $deleteUser->forceDelete();
-            return redirect()->route('user.trash')->withStatus('Data berhasil dihapus permanen.');
-
-        } catch (\Illuminate\Database\QueryException $e) {
-            return $e;
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
-        }
-        catch (Exception $e) {
-            return $e;
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
-        }
-    }
-
-    public function forgotPasswordEmail()
-    {
-        return view('pages.forgot-password.forgot-password-email');
-    }
-
-    public function forgotPasswordEmailProcess(Request $request)
-    {
-        $emailExists = User::where('email', $request->email)->first();
-        if($emailExists)
-            // return view('forgot-password.forgot-password')->with('id', $emailExists->id);
-            return redirect('lupa-password/'.$emailExists->email);
-        else
-            return back()->withError('Email tidak ditemukan.');
-    }
-
-    public function forgotPassword($email)
-    {
-        $emailExists = User::where('email', $email)->first();
-
-        return view('pages.forgot-password.forgot-password')->with('id', $emailExists->id);
-    }
-
-    public function forgotPasswordProcess(Request $request)
-    {
-        $request->validate(
-            [
-                'password' => 'required',
-                'confirmation' => 'required|same:password'
-            ],
-            [
-                'required' => ':attribute harus diisi.',
-                'same' => 'Konfirmasi password harus sesuai.'
-            ],
-            [
-                'password' => 'Password baru',
-                'confirmation' => 'Konfirmasi password baru',
-            ]
-        );
-
-        try {
-            $id = $request->id;
-            if($id) {
-                $user = User::find($id);
-                $user->password = Hash::make($request->password);
-
-                $user->save();
-            }
-            else {
-                return back()->withError('Terjadi kesalahan');
-            }
-        } catch (\Exception $e) {
+        } catch (QueryException $e) {
             return back()->withError('Terjadi kesalahan.');
-        } catch (\Illuminate\Database\QueryException $e) {
+        } catch (Exception $e) {
             return back()->withError('Terjadi kesalahan.');
         }
 
-        return redirect('/login')->withStatus('Password berhasil diperbarui.');
+        return redirect()->route('dashboard')->withStatus('Password berhasil diperbarui.');
     }
-
 }

@@ -101,7 +101,8 @@ class LabaRugiController extends Controller
                 
             }
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withStatus($e->getMessage());
+            report($e);
+            return back()->withStatus('Terjadi kesalahan.');
         }
 
         return \view('pages.general-ledger.laba-rugi.index', $this->param);

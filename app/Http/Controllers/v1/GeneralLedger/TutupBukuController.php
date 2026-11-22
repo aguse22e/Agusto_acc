@@ -89,7 +89,8 @@ class TutupBukuController extends Controller
                 $this->param['penutup'] = $this->barisPenutup($tanggal);
             }
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withStatus($e->getMessage());
+            report($e);
+            return back()->withStatus('Terjadi kesalahan.');
         }
 
         return \view('pages.general-ledger.tutup-buku.index', $this->param);
@@ -179,7 +180,8 @@ class TutupBukuController extends Controller
             return redirect('general-ledger/tutup-buku')->withStatus('Tutup buku berhasil. Voucher penutup: ' . implode(', ', $voucher) . '. Saldo akun nominal sampai ' . $tanggal . ' kini nol dan laba berpindah ke ' . $akunLabaDitahan->nama . '.');
         } catch (\Illuminate\Database\QueryException $e) {
             DB::rollBack();
-            return back()->withError('Terjadi kesalahan. ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 }

@@ -39,9 +39,11 @@ class ShiftController extends Controller
 
             $this->param['shift'] = $getShift->paginate(10);
         } catch (QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
 
         return view('pages.shift.index', $this->param);
@@ -130,9 +132,11 @@ class ShiftController extends Controller
             $shift->delete();
             return redirect()->route('shift.index')->withStatus('Data berhasil dipindahkan ke tempat sampah.');
         } catch (QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 
@@ -151,9 +155,11 @@ class ShiftController extends Controller
             $this->param['shift'] = $getShift->paginate(10);
             return view('pages.shift.listTrash', $this->param);
         } catch (QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 
@@ -168,9 +174,11 @@ class ShiftController extends Controller
                 return redirect()->route('shift.trash')->withError('Data tidak ada dalam tempat sampah.');
             }
         } catch (QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 
@@ -188,9 +196,11 @@ class ShiftController extends Controller
                 return redirect()->route('shift.trash')->withError('Data tidak ada dalam tempat sampah.');
             }
         } catch (QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 }

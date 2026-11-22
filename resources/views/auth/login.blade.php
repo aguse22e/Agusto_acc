@@ -164,7 +164,7 @@
                                         </label>
                                     </div>
                                     <div class="forgot-phone text-right float-right">
-                                        <a href="{{ route('lupa_password_email') }}" class="text-right f-w-600"> Forgot Password?</a>
+                                        <a href="{{ route('password.request') }}" class="text-right f-w-600"> Forgot Password?</a>
                                     </div>
                                 </div>
                             </div>

@@ -57,10 +57,12 @@ class UserActivityController extends Controller
 
             $this->param['logActivity'] = $getUserActivity->paginate(10);
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
         catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
 
         return view('pages.user-activity.index', $this->param);
@@ -81,7 +83,8 @@ class UserActivityController extends Controller
                                             ->where('user_activity.id', $id)
                                             ->firstOrFail();
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
         catch (Exception $e) {
             return back()->withError('Catatan aktivitas tidak ditemukan.');

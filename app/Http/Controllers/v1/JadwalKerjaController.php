@@ -77,9 +77,11 @@ class JadwalKerjaController extends Controller
             $this->param['rekap'] = $rekap;
             $this->param['daftarStatus'] = $this->daftarStatus;
         } catch (QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
 
         return view('pages.jadwal-kerja.index', $this->param);
@@ -181,9 +183,11 @@ class JadwalKerjaController extends Controller
             $jadwal->delete();
             return back()->withStatus('Jadwal berhasil dipindahkan ke tempat sampah.');
         } catch (QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 
@@ -195,9 +199,11 @@ class JadwalKerjaController extends Controller
             $this->param['jadwal'] = JadwalKerja::onlyTrashed()->with(['karyawan', 'shift'])->orderBy('tanggal', 'DESC')->paginate(10);
             return view('pages.jadwal-kerja.listTrash', $this->param);
         } catch (QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 
@@ -215,9 +221,11 @@ class JadwalKerjaController extends Controller
                 return redirect()->route('jadwal-kerja.trash')->withError('Data tidak ada dalam tempat sampah.');
             }
         } catch (QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 
@@ -232,9 +240,11 @@ class JadwalKerjaController extends Controller
                 return redirect()->route('jadwal-kerja.trash')->withError('Data tidak ada dalam tempat sampah.');
             }
         } catch (QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 
@@ -308,9 +318,11 @@ class JadwalKerjaController extends Controller
             return redirect()->route('jadwal-kerja.index', ['bulan' => date('m', strtotime($request->tanggal_dari)), 'tahun' => date('Y', strtotime($request->tanggal_dari))])
                 ->withStatus("Generate selesai: {$dibuat} jadwal dibuat, {$dilewati} dilewati karena sudah ada.");
         } catch (QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 }

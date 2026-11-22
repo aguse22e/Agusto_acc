@@ -51,7 +51,8 @@ class NeracaSaldoController extends Controller
             // return $kodeAkun;
             // return implode(',', $kodeAkun);
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withStatus($e->getMessage());
+            report($e);
+            return back()->withStatus('Terjadi kesalahan.');
         }
 
         return \view('pages.general-ledger.neraca-saldo.index', $this->param);

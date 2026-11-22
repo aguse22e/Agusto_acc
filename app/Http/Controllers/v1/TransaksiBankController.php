@@ -47,10 +47,12 @@ class TransaksiBankController extends Controller
 
             $this->param['transaksi_bank'] = $getTransaksiBank->paginate(10);
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
         catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
 
         return view('pages.transaksi-bank.index', $this->param);
@@ -118,7 +120,7 @@ class TransaksiBankController extends Controller
         DB::beginTransaction();
         try {
             $total = 0;
-            $loopTotal = $_POST['subtotal'];
+            $loopTotal = $request->subtotal;
             foreach ($loopTotal as $key => $value) {
                 $total += $value;
             }
@@ -147,12 +149,12 @@ class TransaksiBankController extends Controller
             $addUserActivity->keterangan = 'Berhasil menambahkan Transaksi Bank dengan kode '.$kodeBank.' dengan total '.$total.'.';
             $addUserActivity->save();
 
-            foreach ($_POST['subtotal'] as $key => $value) {
+            foreach ($request->subtotal as $key => $value) {
                 $addDetailBank =  new TransaksiBankDetail;
                 $addDetailBank->kode_transaksi_bank = $kodeBank;
-                $addDetailBank->kode_lawan = $_POST['kode_lawan'][$key];
-                $addDetailBank->subtotal = $_POST['subtotal'][$key];
-                $addDetailBank->keterangan = $_POST['keterangan'][$key];
+                $addDetailBank->kode_lawan = $request->kode_lawan[$key];
+                $addDetailBank->subtotal = $request->subtotal[$key];
+                $addDetailBank->keterangan = $request->keterangan[$key];
 
                 $addDetailBank->save();
 
@@ -161,11 +163,11 @@ class TransaksiBankController extends Controller
                 $addJurnal->tanggal = $request->tanggal;
                 $addJurnal->jenis_transaksi = 'Bank';
                 $addJurnal->kode_transaksi = $kodeBank;
-                $addJurnal->keterangan = $_POST['keterangan'][$key];
+                $addJurnal->keterangan = $request->keterangan[$key];
                 $addJurnal->kode = $request->kode_akun;
-                $addJurnal->lawan = $_POST['kode_lawan'][$key];
+                $addJurnal->lawan = $request->kode_lawan[$key];
                 $addJurnal->tipe = $request->tipe == 'Masuk' ? 'Debit' : 'Kredit';
-                $addJurnal->nominal = $_POST['subtotal'][$key];
+                $addJurnal->nominal = $request->subtotal[$key];
                 $addJurnal->id_detail = $addDetailBank->id;
                 $addJurnal->save();
             }
@@ -206,9 +208,11 @@ class TransaksiBankController extends Controller
             return view('pages.transaksi-bank.show',$this->param);
 
         } catch (QueryException $e) {
-            return redirect()->back()->withError('Terjadi kesalahan.' . $e->getMessage());
+            report($e);
+            return redirect()->back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return redirect()->back()->withError('Terjadi kesalahan.'. $e->getMessage());
+            report($e);
+            return redirect()->back()->withError('Terjadi kesalahan.');
         }
     }
 
@@ -236,9 +240,11 @@ class TransaksiBankController extends Controller
             return view('pages.transaksi-bank.edit',$this->param);
 
         } catch (QueryException $e) {
-            return redirect()->back()->withError('Terjadi kesalahan.' . $e->getMessage());
+            report($e);
+            return redirect()->back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return redirect()->back()->withError('Terjadi kesalahan.'. $e->getMessage());
+            report($e);
+            return redirect()->back()->withError('Terjadi kesalahan.');
         }
     }
 
@@ -303,42 +309,42 @@ class TransaksiBankController extends Controller
 
             $newTotal = 0;
 
-            foreach ($_POST['kode_lawan'] as $key => $value) {
+            foreach ($request->kode_lawan as $key => $value) {
                 // cek tambah detail baru
-                if ($_POST['id_detail'][$key] != 0) {
+                if ($request->id_detail[$key] != 0) {
                     $get_detail_transaksi_bank = TransaksiBankDetail::select('kode_lawan','keterangan','subtotal')
-                                                                    ->where('id',$_POST['id_detail'][$key])->get()[0];
+                                                                    ->where('id',$request->id_detail[$key])->get()[0];
                     // cek terdapat perubahan pada detail
-                    if ($_POST['kode_lawan'][$key] != $get_detail_transaksi_bank['kode_lawan'] || $_POST['keterangan'][$key] != $get_detail_transaksi_bank['keterangan'] || $_POST['subtotal'][$key] != $get_detail_transaksi_bank['subtotal']) {
+                    if ($request->kode_lawan[$key] != $get_detail_transaksi_bank['kode_lawan'] || $request->keterangan[$key] != $get_detail_transaksi_bank['keterangan'] || $request->subtotal[$key] != $get_detail_transaksi_bank['subtotal']) {
                         // update detail transaksi bank
-                        TransaksiBankDetail::where('id', $_POST['id_detail'][$key])
+                        TransaksiBankDetail::where('id', $request->id_detail[$key])
                         ->update([
-                            'kode_lawan' => $_POST['kode_lawan'][$key],
-                            'subtotal' => $_POST['subtotal'][$key],
-                            'keterangan' => $_POST['keterangan'][$key],
+                            'kode_lawan' => $request->kode_lawan[$key],
+                            'subtotal' => $request->subtotal[$key],
+                            'keterangan' => $request->keterangan[$key],
                         ]);
 
                         // return 'aman';
 
                         // update jurnal
-                        Jurnal::where('id_detail', $_POST['id_detail'][$key])
+                        Jurnal::where('id_detail', $request->id_detail[$key])
                         ->where('kode_transaksi', $id)
                         ->update([
-                            'tanggal' => $_POST['tanggal'],
-                            'keterangan' => $_POST['keterangan'][$key],
+                            'tanggal' => $request->tanggal,
+                            'keterangan' => $request->keterangan[$key],
                             'kode' => $request->kode_akun,
-                            'lawan' => $_POST['kode_lawan'][$key],
-                            'nominal' => $_POST['subtotal'][$key],
+                            'lawan' => $request->kode_lawan[$key],
+                            'nominal' => $request->subtotal[$key],
                             'tipe' => $request->tipe == 'Masuk' ? 'Debit' : 'Kredit', // PERBAIKAN SAK: sinkronkan sisi jurnal dengan tipe header
                         ]);
 
                     }else{
 
                         // update jurnal
-                        Jurnal::where('id_detail', $_POST['id_detail'][$key])
+                        Jurnal::where('id_detail', $request->id_detail[$key])
                         ->where('kode_transaksi', $id)
                         ->update([
-                            'tanggal' => $_POST['tanggal'],
+                            'tanggal' => $request->tanggal,
                             'kode' => $request->kode_akun,
                             'tipe' => $request->tipe == 'Masuk' ? 'Debit' : 'Kredit', // PERBAIKAN SAK: sinkronkan sisi jurnal dengan tipe header
                         ]);
@@ -346,30 +352,30 @@ class TransaksiBankController extends Controller
                 }else{
                     //insert to detail
                     $newDetailTransaksiBank = TransaksiBankDetail::create([
-                        'kode_transaksi_bank' => $_POST['kode_transaksi_bank'],
-                        'keterangan' => $_POST['keterangan'][$key],
-                        'kode_lawan' => $_POST['kode_lawan'][$key],
-                        'subtotal' => $_POST['subtotal'][$key],
+                        'kode_transaksi_bank' => $request->kode_transaksi_bank,
+                        'keterangan' => $request->keterangan[$key],
+                        'kode_lawan' => $request->kode_lawan[$key],
+                        'subtotal' => $request->subtotal[$key],
                     ]);
-                    // return $_POST['kode_lawan'];
+                    // return $request->kode_lawan;
 
                         Jurnal::insert([
-                            'tanggal' => $_POST['tanggal'],
+                            'tanggal' => $request->tanggal,
                             'jenis_transaksi' => 'Bank',
-                            'kode_transaksi' => $_POST['kode_transaksi_bank'],
-                            'keterangan' => $_POST['keterangan'][$key],
-                            'kode' => $_POST['kode_akun'],
-                            'lawan' => $_POST['kode_lawan'][$key],
+                            'kode_transaksi' => $request->kode_transaksi_bank,
+                            'keterangan' => $request->keterangan[$key],
+                            'kode' => $request->kode_akun,
+                            'lawan' => $request->kode_lawan[$key],
                             'tipe' => $tipe == 'Masuk' ? 'Debit' : 'Kredit',
-                            'nominal' => $_POST['subtotal'][$key],
+                            'nominal' => $request->subtotal[$key],
                             'id_detail' => $newDetailTransaksiBank->id
                         ]);
                 }
-                $newTotal = $newTotal + $_POST['subtotal'][$key];
+                $newTotal = $newTotal + $request->subtotal[$key];
             }
 
-            if (isset($_POST['id_delete'])) {
-                foreach ($_POST['id_delete'] as $key => $value) {
+            if ($request->has('id_delete')) {
+                foreach ($request->id_delete as $key => $value) {
 
                     //delete detail
                     TransaksiBankDetail::where('id', $value)->delete();
@@ -381,10 +387,10 @@ class TransaksiBankController extends Controller
 
             TransaksiBank::where('kode_transaksi_bank', $id)
             ->update([
-                'tanggal' => $_POST['tanggal'],
-                'akun_kode' => $_POST['kode_akun'],
-                'tipe' => $_POST['tipe'],
-                'no_referensi' => $_POST['no_referensi'] ?? null,
+                'tanggal' => $request->tanggal,
+                'akun_kode' => $request->kode_akun,
+                'tipe' => $request->tipe,
+                'no_referensi' => $request->no_referensi ?? null,
                 'total' => $newTotal,
             ]);
 
@@ -393,7 +399,7 @@ class TransaksiBankController extends Controller
             $addUserActivity->id_user = Auth::user()->id;
             $addUserActivity->jenis_transaksi = 'Bank';
             $addUserActivity->tipe = 'Update';
-            $addUserActivity->keterangan = 'Berhasil memperbarui/menambahkan data baru Transaksi Bank dengan kode '.$_POST['kode_transaksi_bank'].' dengan total '.$newTotal.'.';
+            $addUserActivity->keterangan = 'Berhasil memperbarui/menambahkan data baru Transaksi Bank dengan kode '.$request->kode_transaksi_bank.' dengan total '.$newTotal.'.';
             $addUserActivity->save();
 
             DB::commit();
@@ -401,11 +407,13 @@ class TransaksiBankController extends Controller
         } catch (QueryException $e) {
             return $e;
             DB::rollBack();
-            return redirect()->back()->withError('Terjadi kesalahan.' . $e->getMessage());
+            report($e);
+            return redirect()->back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
             return $e;
             DB::rollBack();
-            return redirect()->back()->withError('Terjadi kesalahan.'. $e->getMessage());
+            report($e);
+            return redirect()->back()->withError('Terjadi kesalahan.');
         }
     }
 
@@ -429,11 +437,13 @@ class TransaksiBankController extends Controller
 
         } catch (\Illuminate\Database\QueryException $e) {
             return $e;
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
         catch (Exception $e) {
             return $e;
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 
@@ -457,10 +467,12 @@ class TransaksiBankController extends Controller
             }
 
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
         catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
 
@@ -479,9 +491,11 @@ class TransaksiBankController extends Controller
             $this->param['transaksi_bank'] = $getTransaksiBank->paginate(10);
             return view('pages.transaksi-bank.listTrash', $this->param);
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         } catch (Exception $e) {
-            return back()->withError('Terjadi Kesalahan : ' . $e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
     }
     public function destroy($id)
@@ -512,9 +526,9 @@ class TransaksiBankController extends Controller
         }
     }
     // detail transaksi bank
-    public function DetailbankTransaksi()
+    public function DetailbankTransaksi(Request $request)
     {
-        $next = $_GET['biggestNo'] + 1;
+        $next = (int) $request->query('biggestNo', 0) + 1;
         $kode_lawan = KodeAkun::select('kode_akun.kode_akun','kode_akun.nama')
                         ->join('kode_induk','kode_akun.induk_kode','kode_induk.kode_induk')
                         ->get();
@@ -532,9 +546,11 @@ class TransaksiBankController extends Controller
             $this->param['report_bank'] = null;
             return view('pages.transaksi-bank.laporan-bank',$this->param);
         }catch(\Exception $e){
-            return redirect()->back()->withStatus('Terjadi kesalahan. : ' . $e->getMessage());
+            report($e);
+            return redirect()->back()->withStatus('Terjadi kesalahan.');
         }catch(\Illuminate\Database\QueryException $e){
-            return redirect()->back()->withStatus('Terjadi kesalahan pada database : ' . $e->getMessage());
+            report($e);
+            return redirect()->back()->withStatus('Terjadi kesalahan.');
         }
     }
     public function getReport(Request $request)
@@ -571,9 +587,11 @@ class TransaksiBankController extends Controller
                                                     ->get();
             return view('pages.transaksi-bank.laporan-bank',$this->param);
         }catch(\Exception $e){
-            return redirect()->back()->withStatus('Terjadi kesalahan. : ' . $e->getMessage());
+            report($e);
+            return redirect()->back()->withStatus('Terjadi kesalahan.');
         }catch(\Illuminate\Database\QueryException $e){
-            return redirect()->back()->withStatus('Terjadi kesalahan pada database : ' . $e->getMessage());
+            report($e);
+            return redirect()->back()->withStatus('Terjadi kesalahan.');
         }
     }
     public function printReport(Request $request)
@@ -610,21 +628,23 @@ class TransaksiBankController extends Controller
                                                     ->get();
             return view('pages.transaksi-bank.print-laporan-bank',$this->param);
         }catch(\Exception $e){
-            return redirect()->back()->withStatus('Terjadi kesalahan. : ' . $e->getMessage());
+            report($e);
+            return redirect()->back()->withStatus('Terjadi kesalahan.');
         }catch(\Illuminate\Database\QueryException $e){
-            return redirect()->back()->withStatus('Terjadi kesalahan pada database : ' . $e->getMessage());
+            report($e);
+            return redirect()->back()->withStatus('Terjadi kesalahan.');
         }
     }
 
     // edit kas transaksi
-    public function addEditDetailBankTransaksi()
+    public function addEditDetailBankTransaksi(Request $request)
     {
         $fields = array(
             'kode_lawan' => 'kode_lawan',
             'subtotal' => 'subtotal',
             'keterangan' => 'keterangan',
         );
-        $next = $_GET['biggestNo'] + 1;
+        $next = (int) $request->query('biggestNo', 0) + 1;
 
         $kode_lawan = KodeAkun::select('kode_akun.kode_akun', 'kode_akun.nama')
                                 ->join('kode_induk', 'kode_akun.induk_kode', 'kode_induk.kode_induk')

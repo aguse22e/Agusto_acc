@@ -98,7 +98,8 @@ trait JurnalKoreksi
             return [true, 'Jurnal Koreksi ' . $kodeMemorial . ' berhasil dibuat atas transaksi ' . $kodeAsal . '. Jurnal asal tidak diubah.', $kodeMemorial];
         } catch (\Exception $e) {
             DB::rollBack();
-            return [false, 'Jurnal koreksi gagal dibuat: ' . $e->getMessage(), null];
+            report($e);
+            return [false, 'Jurnal koreksi gagal dibuat.', null];
         }
     }
 }

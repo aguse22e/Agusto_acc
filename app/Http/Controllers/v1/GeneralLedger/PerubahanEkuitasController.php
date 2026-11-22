@@ -133,7 +133,8 @@ class PerubahanEkuitasController extends Controller
                 $this->param['perubahan'] = $this->hitungPerubahan($tanggalDari, $tanggalSampai);
             }
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withStatus($e->getMessage());
+            report($e);
+            return back()->withStatus('Terjadi kesalahan.');
         }
 
         return \view('pages.general-ledger.perubahan-ekuitas.index', $this->param);

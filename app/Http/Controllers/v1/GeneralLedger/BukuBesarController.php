@@ -52,7 +52,8 @@ class BukuBesarController extends Controller
             // return $kodeAkun;
             // return implode(',', $kodeAkun);
         } catch (\Illuminate\Database\QueryException $e) {
-            return back()->withError($e->getMessage());
+            report($e);
+            return back()->withError('Terjadi kesalahan.');
         }
 
         return \view('pages.general-ledger.buku-besar.index', $this->param);
