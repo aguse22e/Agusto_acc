@@ -236,4 +236,74 @@ class UsersController extends Controller
 
         return redirect()->route('dashboard')->withStatus('Password berhasil diperbarui.');
     }
+    public function trashUser(Request $request)
+    {
+        $this->param['btnText'] = 'Tambah User';
+        $this->param['btnLink'] = route('user.create');
+        $this->param['btnTrashText'] = 'Lihat Sampah';
+        $this->param['btnTrashLink'] = route('user.trash');
+
+        try {
+            $keyword = $request->get('keyword');
+            $getUsers = User::onlyTrashed();
+
+            if ($keyword) {
+                $getUsers->where('name', 'LIKE', "%{$keyword}%")->orWhere('email', 'LIKE', "%{$keyword}%");
+            }
+
+            $this->param['user'] = $getUsers->paginate(10);
+            return view('pages.users.listTrash',$this->param);
+        } catch (\Illuminate\Database\QueryException $e) {
+            \Log::error('[UsersController] ' . $e->getMessage(), ['exception' => $e]);
+            return back()->withError('Terjadi kesalahan.');
+        }
+        catch (Exception $e) {
+            \Log::error('[UsersController] ' . $e->getMessage(), ['exception' => $e]);
+            return back()->withError('Terjadi kesalahan.');
+        }
+
+        // return view('pages.users.index', $this->param);
+        // $this->param['data'] = User::onlyTrashed()->get();
+    }
+    public function restoreUser($id)
+    {
+        try {
+            $user = User::withTrashed()->findOrFail($id);
+            if ($user->trashed()) {
+                $user->deleted_by = null;
+                $user->restore();
+                return redirect()->route('user.trash')->withStatus('Data berhasil di kembalikan.');
+            }
+            else
+            {
+                return redirect()->route('user.trash')->withError('Data tidak ada dalam sampah.');
+            }
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            \Log::error('[UsersController] ' . $e->getMessage(), ['exception' => $e]);
+            return back()->withError('Terjadi kesalahan.');
+        }
+        catch (Exception $e) {
+            \Log::error('[UsersController] ' . $e->getMessage(), ['exception' => $e]);
+            return back()->withError('Terjadi kesalahan.');
+        }
+
+    }
+    public function hapusPermanen($id)
+    {
+        // return   $id;
+        try {
+            $deleteUser = User::onlyTrashed()->where('id',$id);
+            $deleteUser->forceDelete();
+            return redirect()->route('user.trash')->withStatus('Data berhasil dihapus permanen.');
+
+        } catch (\Illuminate\Database\QueryException $e) {
+            \Log::error('[UsersController] ' . $e->getMessage(), ['exception' => $e]);
+            return back()->withError('Terjadi kesalahan.');
+        }
+        catch (Exception $e) {
+            \Log::error('[UsersController] ' . $e->getMessage(), ['exception' => $e]);
+            return back()->withError('Terjadi kesalahan.');
+        }
+    }
 }
